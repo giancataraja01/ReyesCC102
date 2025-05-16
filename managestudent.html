@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Entry</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen py-10">
+
+  <!-- Add Student Form -->
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-md mb-10">
+    <h1 class="text-2xl font-bold mb-4 text-center">Add Student</h1>
+    <form id="studentForm" class="space-y-4">
+      <div>
+        <label for="studentid" class="block text-sm font-medium">Student ID</label>
+        <input type="number" id="studentid" class="w-full border px-3 py-2 rounded" required />
+      </div>
+      <div>
+        <label for="firstname" class="block text-sm font-medium">First Name</label>
+        <input type="text" id="firstname" class="w-full border px-3 py-2 rounded" required />
+      </div>
+      <div>
+        <label for="familyname" class="block text-sm font-medium">Family Name</label>
+        <input type="text" id="familyname" class="w-full border px-3 py-2 rounded" required />
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Submit</button>
+    </form>
+    <p id="message" class="text-green-600 mt-4 hidden text-center">Student added successfully!</p>
+  </div>
+
+  <!-- Student Table -->
+  <div class="bg-white p-6 rounded shadow-md w-full max-w-4xl">
+    <h2 class="text-xl font-semibold mb-4 text-center">Student List</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-300">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="px-4 py-2 border">Student ID</th>
+            <th class="px-4 py-2 border">First Name</th>
+            <th class="px-4 py-2 border">Family Name</th>
+            <th class="px-4 py-2 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="studentTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Update Modal -->
+  <div id="updateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded shadow-md w-full max-w-md relative">
+      <h2 class="text-xl font-bold mb-4">Update Student</h2>
+      <form id="updateForm" class="space-y-4">
+        <input type="hidden" id="updateKey">
+        <div>
+          <label for="updateStudentId" class="block text-sm font-medium">Student ID</label>
+          <input type="number" id="updateStudentId" class="w-full border px-3 py-2 rounded" required />
+        </div>
+        <div>
+          <label for="updateFirstName" class="block text-sm font-medium">First Name</label>
+          <input type="text" id="updateFirstName" class="w-full border px-3 py-2 rounded" required />
+        </div>
+        <div>
+          <label for="updateFamilyName" class="block text-sm font-medium">Family Name</label>
+          <input type="text" id="updateFamilyName" class="w-full border px-3 py-2 rounded" required />
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" id="closeModalBtn" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "",
+      authDomain: "",
+      databaseURL: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: ""
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const form = document.getElementById('studentForm');
+    const message = document.getElementById('message');
+    const studentTableBody = document.getElementById('studentTableBody');
+
+    const updateModal = document.getElementById('updateModal');
+    const updateForm = document.getElementById('updateForm');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    // Submit new student
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const studentId = document.getElementById('studentid').value;
+      const firstName = document.getElementById('firstname').value;
+      const familyName = document.getElementById('familyname').value;
+
+      const studentData = {
+        studentid: parseInt(studentId),
+        studentfirstname: firstName,
+        studentfamilyname: familyName
+      };
+
+      database.ref('students').push(studentData)
+        .then(() => {
+          message.classList.remove('hidden');
+          setTimeout(() => message.classList.add('hidden'), 3000);
+          form.reset();
+        })
+        .catch((error) => {
+          alert("Error: " + error.message);
+        });
+    });
+
+    // Fetch and display students
+    function fetchStudents() {
+      database.ref('students').on('value', snapshot => {
+        const students = snapshot.val();
+        studentTableBody.innerHTML = '';
+
+        for (let key in students) {
+          const student = students[key];
+          const row = document.createElement('tr');
+          row.classList.add('border-t');
+
+          row.innerHTML = `
+            <td class="px-4 py-2 border">${student.studentid}</td>
+            <td class="px-4 py-2 border">${student.studentfirstname}</td>
+            <td class="px-4 py-2 border">${student.studentfamilyname}</td>
+            <td class="px-4 py-2 border text-center space-x-2">
+              <button data-id="${key}" class="edit-btn bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Update</button>
+              <button data-id="${key}" class="delete-btn bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
+            </td>
+          `;
+
+          studentTableBody.appendChild(row);
+        }
+
+        // Delete
+        document.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', function () {
+            const key = this.getAttribute('data-id');
+            if (confirm('Are you sure you want to delete this student?')) {
+              database.ref('students').child(key).remove();
+            }
+          });
+        });
+
+        // Update
+        document.querySelectorAll('.edit-btn').forEach(button => {
+          button.addEventListener('click', function () {
+            const key = this.getAttribute('data-id');
+            const student = students[key];
+
+            document.getElementById('updateKey').value = key;
+            document.getElementById('updateStudentId').value = student.studentid;
+            document.getElementById('updateFirstName').value = student.studentfirstname;
+            document.getElementById('updateFamilyName').value = student.studentfamilyname;
+
+            updateModal.classList.remove('hidden');
+          });
+        });
+      });
+    }
+
+    // Handle update form submit
+    updateForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const key = document.getElementById('updateKey').value;
+      const updatedData = {
+        studentid: parseInt(document.getElementById('updateStudentId').value),
+        studentfirstname: document.getElementById('updateFirstName').value,
+        studentfamilyname: document.getElementById('updateFamilyName').value
+      };
+
+      database.ref('students').child(key).update(updatedData)
+        .then(() => {
+          updateModal.classList.add('hidden');
+        })
+        .catch(error => alert("Update failed: " + error.message));
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      updateModal.classList.add('hidden');
+    });
+
+    fetchStudents();
+  </script>
+
+</body>
+</html>
