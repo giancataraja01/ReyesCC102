@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Entry</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-4 text-center">Add Student</h1>
+
+    <form id="studentForm" class="space-y-4">
+      <div>
+        <label for="studentid" class="block text-sm font-medium">Student ID</label>
+        <input type="number" id="studentid" class="w-full border px-3 py-2 rounded" required />
+      </div>
+      <div>
+        <label for="firstname" class="block text-sm font-medium">First Name</label>
+        <input type="text" id="firstname" class="w-full border px-3 py-2 rounded" required />
+      </div>
+      <div>
+        <label for="familyname" class="block text-sm font-medium">Family Name</label>
+        <input type="text" id="familyname" class="w-full border px-3 py-2 rounded" required />
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Submit</button>
+    </form>
+
+    <p id="message" class="text-green-600 mt-4 hidden text-center">Student added successfully!</p>
+  </div>
+
+  <script>
+    // 🔧 Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "",
+      authDomain: "",
+      databaseURL: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: ""
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const form = document.getElementById('studentForm');
+    const message = document.getElementById('message');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const studentId = document.getElementById('studentid').value;
+      const firstName = document.getElementById('firstname').value;
+      const familyName = document.getElementById('familyname').value;
+
+      const studentData = {
+        studentid: parseInt(studentId),
+        studentfirstname: firstName,
+        studentfamilyname: familyName
+      };
+
+      // Push to Firebase
+      database.ref('students').push(studentData)
+        .then(() => {
+          message.classList.remove('hidden');
+          form.reset();
+        })
+        .catch((error) => {
+          alert("Error: " + error.message);
+        });
+    });
+  </script>
+
+</body>
+</html>
